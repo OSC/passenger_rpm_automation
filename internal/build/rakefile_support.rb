@@ -2,6 +2,8 @@ require 'etc'
 require_relative '../lib/utils'
 require_relative '../lib/distro_info'
 
+PASSENGER_SCL = 'ondemand-passenger5'
+NGINX_SCL = 'ondemand-nginx'
 DISTROS = ENV['DISTRIBUTIONS'].split(/ +/)
 ARCHITECTURES = ENV['ARCHITECTURES'].split(/ +/)
 SHOW_TASKS = !!ENV['SHOW_TASKS']
@@ -99,9 +101,9 @@ def distro_architecture_allowed?(distro_id, arch)
 end
 
 def passenger_srpm_name(distro_id)
-  "#{PASSENGER_RPM_NAME}-#{PASSENGER_VERSION}-#{PASSENGER_RPM_RELEASE}.#{distro_id}.src.rpm"
+  "#{PASSENGER_SCL}-#{PASSENGER_RPM_NAME}-#{PASSENGER_VERSION}-#{PASSENGER_RPM_RELEASE}.#{distro_id}.src.rpm"
 end
 
 def nginx_srpm_name(distro_id)
-  "#{NGINX_RPM_NAME}-#{NGINX_VERSION}-#{NGINX_RPM_RELEASE}.#{distro_id}.src.rpm"
+  "#{NGINX_SCL}-#{NGINX_RPM_NAME}-#{NGINX_VERSION}-#{NGINX_RPM_RELEASE}.#{distro_id}.src.rpm"
 end

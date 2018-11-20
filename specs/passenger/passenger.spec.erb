@@ -1,4 +1,11 @@
 # Based on http://pkgs.fedoraproject.org/cgit/rubygem-passenger.git/tree/
+%global scl_name_prefix ondemand-
+%global scl_name_base passenger
+%global scl_name_version 5
+%global _scl_prefix /opt/ood
+%{!?scl: %global scl %{scl_name_prefix}%{scl_name_base}%{scl_name_version}}
+%{?scl:%scl_package passenger}
+%global nfsmountable 1
 
 %global package_name <%= PASSENGER_RPM_NAME %>
 %global package_version <%= PASSENGER_VERSION %>
@@ -11,17 +18,7 @@
 %global bundled_boost_version 1.54.0
 %global is_enterprise <%= PASSENGER_ENTERPRISE ? 1 : 0 %>
 %global release_dist .<%= @distribution %>
-
-# Fedora <= 18 and RHEL <= 6 used the rubyabi requirement.
-# This is gone in later versions.
-%if 0%{?fc18}
-%global uses_rubyabi 1
-%global rubyabi 1.9.1
-%endif
-%if 0%{?el6}
-%global uses_rubyabi 1
-%global rubyabi 1.8
-%endif
+%global sourcebasename %{tarball_name}-%{tarball_version}
 
 %if 0%{?fedora} >= 19
 %global gem_extdir %{gem_extdir_mri}
@@ -34,8 +31,10 @@
 %{!?_httpd_modconfdir:  %{expand: %%global _httpd_modconfdir  %%{_sysconfdir}/httpd/conf.d}}
 %{!?_httpd_moddir:      %{expand: %%global _httpd_moddir      %%{_libdir}/httpd/modules}}
 
-%{!?ruby_vendorlibdir: %global ruby_vendorlibdir %(ruby -rrbconfig -e 'puts RbConfig::CONFIG["vendorlibdir"]')}
-%{!?ruby_vendorarchdir: %global ruby_vendorarchdir %(ruby -rrbconfig -e 'puts RbConfig::CONFIG["vendorarchdir"]')}
+#%{!?ruby_vendorlibdir: %global ruby_vendorlibdir %(scl enable rh-ruby24 -- ruby -rrbconfig -e 'puts RbConfig::CONFIG["vendorlibdir"]')}
+#%{!?ruby_vendorarchdir: %global ruby_vendorarchdir %(scl enable rh-ruby24 -- ruby -rrbconfig -e 'puts RbConfig::CONFIG["vendorarchdir"]')}
+%global ruby_vendorlibdir /opt/rh/rh-ruby24/root/usr/share/ruby/vendor_ruby
+%global ruby_vendorarchdir /opt/rh/rh-ruby24/root/usr/lib64/ruby/vendor_ruby
 %global passenger_ruby_libdir %{ruby_vendorlibdir}
 %global locations_ini %{passenger_ruby_libdir}/phusion_passenger/locations.ini
 
@@ -55,7 +54,7 @@
 
 
 Summary: Phusion Passenger application server
-Name: %{package_name}
+Name: %{?scl_prefix}%{package_name}
 Version: %{package_version}
 Release: %{package_release}%{?release_dist}
 Group: System Environment/Daemons
@@ -82,15 +81,12 @@ Source102: passenger.tmpfiles
 # https://bugzilla.redhat.com/show_bug.cgi?id=985634
 Patch107:       rubygem-passenger-4.0.18-GLIBC_HAVE_LONG_LONG.patch
 
-Requires: rubygems
+Requires: rh-ruby24-rubygems
 # XXX: Needed to run passenger standalone
-Requires: rubygem(rack)
-Requires: rubygem(rake)
-%if 0%{?uses_rubyabi}
-Requires: ruby(abi) = %{rubyabi}
-%else
-Requires: ruby(release)
-%endif
+Requires: rh-ror50-rubygem(rack)
+Requires: rh-ruby24-rubygem(rake)
+Requires: rh-ruby24-ruby(release)
+%{?scl:Requires:%scl_runtime}
 
 %{!?_selinux_policy_version: %global _selinux_policy_version %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2>/dev/null)}
 %if "%{_selinux_policy_version}" != ""
@@ -105,13 +101,14 @@ BuildRequires: libcurl-devel
 BuildRequires: curl-devel
 %endif
 
-BuildRequires: httpd-devel
-BuildRequires: ruby
-BuildRequires: ruby-devel
-BuildRequires: rubygems
-BuildRequires: rubygems-devel
-BuildRequires: rubygem(rake) >= 0.8.1
-BuildRequires: rubygem(rack)
+BuildRequires: httpd24-build
+BuildRequires: httpd24-httpd-devel
+BuildRequires: rh-ruby24-ruby
+BuildRequires: rh-ruby24-ruby-devel
+BuildRequires: rh-ruby24-rubygems
+BuildRequires: rh-ruby24-rubygems-devel
+BuildRequires: rh-ruby24-rubygem(rake) >= 0.8.1
+BuildRequires: rh-ror50-rubygem(rack)
 BuildRequires: zlib-devel
 BuildRequires: pcre-devel
 BuildRequires: openssl-devel
@@ -122,22 +119,8 @@ BuildRequires: selinux-policy-sandbox
 BuildRequires: checkpolicy, selinux-policy-devel, /usr/share/selinux/devel/policyhelp
 BuildRequires: libselinux-devel
 
-Provides: %{package_name} = %{version}-%{release}
+Provides: %{name} = %{version}-%{release}
 Provides: bundled(boost)  = %{bundled_boost_version}
-
-Obsoletes: rubygem-passenger < %{version}-%{release}
-Obsoletes: rubygem-passenger%{?_isa} < %{version}-%{release}
-Obsoletes: rubygem-passenger-native < %{version}-%{release}
-Obsoletes: rubygem-passenger-native%{?_isa} < %{version}-%{release}
-Obsoletes: rubygem-passenger-native-libs < %{version}-%{release}
-Obsoletes: rubygem-passenger-native-libs%{?_isa} < %{version}-%{release}
-
-%if %{is_enterprise}
-Obsoletes: passenger
-Conflicts: passenger-devel
-Conflicts: passenger-doc
-Conflicts: mod_passenger
-%endif
 
 %description
 Phusion Passenger® is a web server and application server, designed to be fast,
@@ -146,30 +129,22 @@ adds powerful enterprise-grade features that are useful in production,
 and makes administration much easier and less complex. It supports Ruby,
 Python, Node.js and Meteor.
 
-%package -n %{apache_module_package_name}
+%package -n httpd24-%{apache_module_package_name}
 Summary: Apache Module for Phusion Passenger
 Group: System Environment/Daemons
-BuildRequires:  httpd-devel
-Requires: httpd-mmn = %{_httpd_mmn}
-Requires: %{package_name}%{?_isa} = %{version}-%{release}
-%if %{is_enterprise}
-Obsoletes: mod_passenger
-%endif
+BuildRequires:  httpd24-httpd-devel
+Requires: httpd24-httpd-mmn = %{_httpd_mmn}
+Requires: %{name}%{?_isa} = %{version}-%{release}
 License: Boost and BSD and BSD with advertising and MIT and zlib
 
-%description -n %{apache_module_package_name}
+%description -n httpd24-%{apache_module_package_name}
 This package contains the pluggable Apache server module for Phusion Passenger®.
 
 %package devel
 Summary: Phusion Passenger development files
 Group: System Environment/Daemons
-Requires: %{package_name}%{?_isa} = %{version}-%{release}
+Requires: %{name}%{?_isa} = %{version}-%{release}
 Provides: bundled(boost-devel) = %{bundled_boost_version}
-Obsoletes: rubygem-passenger-devel < 4.0.33
-Obsoletes: rubygem-passenger-devel%{?_isa} < 4.0.33
-%if %{is_enterprise}
-Obsoletes: passenger-devel
-%endif
 License: Boost and BSD and BSD with advertising and GPL+ and MIT and zlib
 
 %description devel
@@ -180,21 +155,32 @@ and allows Passenger Standalone to use a different Nginx core version.
 %package doc
 Summary: Phusion Passenger documentation
 Group: System Environment/Daemons
-Requires: %{package_name} = %{version}-%{release}
-Obsoletes: rubygem-passenger-doc < %{version}-%{release}
-Provides:  rubygem-passenger-doc = %{version}-%{release}
-%if %{is_enterprise}
-Obsoletes: passenger-doc
-%endif
+Requires: %{name} = %{version}-%{release}
+Provides:  %{?scl_prefix}rubygem-passenger-doc = %{version}-%{release}
 BuildArch: noarch
 License: CC-BY-SA and MIT and (MIT or GPL+)
 
 %description doc
 This package contains documentation files for Phusion Passenger®.
 
+%package -n %{?scl}-runtime
+Summary: Package that handles %{scl_name} Software Collection.
+Requires: scl-utils
+
+%description -n %{?scl}-runtime
+Package shipping essential scripts to work with %{scl_name} Software Collection.
+
+%package -n %{?scl}-build
+Summary: Package shipping basic build configuration
+Requires: scl-utils-build
+
+%description -n %{?scl}-build
+Package shipping essential configuration macros to build %scl Software Collection.
+
 
 %prep
-%setup -q -n %{tarball_name}-%{tarball_version}
+%setup -q -c -n %{name}
+cd %{sourcebasename}
 tar xzf %{SOURCE1}
 
 # fix passenger boost for glibc >= 2.18
@@ -203,6 +189,8 @@ tar xzf %{SOURCE1}
 %endif
 
 %build
+scl enable httpd24 rh-ruby24 rh-ror50 - << \EOF
+cd %{sourcebasename}
 export EXTRA_CFLAGS="${CFLAGS:-%optflags} -Wno-deprecated"
 export EXTRA_CXXFLAGS="${CXXFLAGS:-%optflags} -Wno-deprecated"
 
@@ -231,6 +219,7 @@ rake fakeroot \
     FS_DATADIR=%{_datadir} \
     FS_LIBDIR=%{_libdir} \
     FS_DOCDIR=%{_docdir} \
+    RUBY=$(which ruby) \
     RUBYLIBDIR=%{ruby_vendorlibdir} \
     RUBYARCHDIR=%{ruby_vendorarchdir} \
     APACHE2_MODULE_PATH=%{_httpd_moddir}/mod_passenger.so
@@ -249,13 +238,16 @@ popd
 %{__sed} -i "s|SUPPORT_BINARIES_DIR_ALT|%{_prefix}/lib/%{namespace}/support-binaries|g" passenger.fc.tmp
 uniq passenger.fc.tmp > passenger.fc
 for selinuxvariant in %{static_selinux_variants}; do
-    %{__make} -f %{_datadir}/selinux/devel/Makefile NAME=passenger
+    %{__make} -f %{_root_datadir}/selinux/devel/Makefile NAME=passenger
     %{__mv} passenger.pp passenger.pp.${selinuxvariant}
-    %{__make} -f %{_datadir}/selinux/devel/Makefile NAME=passenger clean
+    %{__make} -f %{_root_datadir}/selinux/devel/Makefile NAME=passenger clean
 done
-
+EOF
 
 %install
+scl enable httpd24 rh-ruby24 rh-ror50 - << \EOF
+set -x
+cd %{sourcebasename}
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
@@ -295,17 +287,21 @@ export LC_ALL=en_US.UTF-8
 %endif
 
 # Make our ghost log and run directories...
-%{__mkdir_p} %{buildroot}%{_localstatedir}/log/passenger-analytics
-%{__mkdir_p} %{buildroot}%{_localstatedir}/run/passenger-instreg
-%{__mkdir_p} %{buildroot}%{_prefix}/lib/tmpfiles.d 
+%{__mkdir_p} %{buildroot}%{_root_localstatedir}/log/%{name}-analytics
+%{__mkdir_p} %{buildroot}%{_root_localstatedir}/run/%{name}-instreg
+%{__mkdir_p} %{buildroot}%{_root_prefix}/lib/tmpfiles.d 
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 16
     %{__install} -m 644 -p %{SOURCE102} \
-        %{buildroot}%{_prefix}/lib/tmpfiles.d/passenger.conf
+        %{buildroot}%{_root_prefix}/lib/tmpfiles.d/%{name}.conf
+    %{__sed} -i 's|/run/%{package_name}-instreg|/run/%{name}-instreg|g' \
+        %{buildroot}%{_root_prefix}/lib/tmpfiles.d/%{name}.conf
 %endif
 
 # logrotate
-%{__mkdir_p} %{buildroot}%{_sysconfdir}/logrotate.d
-%{__install} -pm 0644 %{SOURCE10} %{buildroot}%{_sysconfdir}/logrotate.d/passenger
+%{__mkdir_p} %{buildroot}%{_root_sysconfdir}/logrotate.d
+%{__install} -pm 0644 %{SOURCE10} %{buildroot}%{_root_sysconfdir}/logrotate.d/%{name}
+%{__sed} -i 's|%{_root_localstatedir}/log/%{package_name}-analytics|%{_root_localstatedir}/log/%{name}-analytics|g' \
+  %{buildroot}%{_root_sysconfdir}/logrotate.d/%{name}
 
 # Install man pages into the proper location.
 %{__mkdir_p} %{buildroot}%{_mandir}/man1
@@ -322,6 +318,25 @@ for selinuxvariant in %{static_selinux_variants}; do
     %{__install} -p -m 644 passenger.pp.${selinuxvariant} \
         %{buildroot}%{_datadir}/selinux/${selinuxvariant}/passenger.pp
 done
+
+cat >> %{buildroot}%{_scl_scripts}/enable << EOS
+. scl_source enable rh-ruby24 rh-ror51
+export PATH="%{_bindir}:%{_sbindir}\${PATH:+:\${PATH}}"
+export LD_LIBRARY_PATH="%{_libdir}\${LD_LIBRARY_PATH:+:\${LD_LIBRARY_PATH}}"
+export MANPATH="%{_mandir}:\${MANPATH:-}"
+export PKG_CONFIG_PATH="%{_libdir}/pkgconfig\${PKG_CONFIG_PATH:+:\${PKG_CONFIG_PATH}}"
+EOS
+mkdir -p %{buildroot}%{_root_sysconfdir}/{rpm,scl/prefixes}
+cat >> %{buildroot}%{_root_sysconfdir}/rpm/macros.%{scl}-config << EOS 
+%%scl %scl
+%{?nfsmountable:%%nfsmountable %{nfsmountable}}
+%{!?nfsmountable:%%undefine nfsmountable}
+EOS
+cat >> %{buildroot}%{_root_sysconfdir}/scl/prefixes/%{scl} << EOS 
+%_scl_prefix
+EOS
+
+EOF
 
 
 %define listActualSelinuxVariants() \
@@ -345,7 +360,7 @@ if /usr/sbin/sestatus | grep 'SELinux status' | grep -q enabled; then
                 %{_datadir}/selinux/${selinuxvariant}/passenger.pp || :
         fi
     done
-    /sbin/fixfiles -R %{package_name} restore || :
+    /sbin/fixfiles -R %{name} restore || :
     /sbin/restorecon -R %{_libdir}/%{namespace}/support-binaries || :
 fi
 
@@ -355,7 +370,7 @@ if [ $1 -eq 0 ] ; then
     for selinuxvariant in ${actual_selinux_variants}; do
         /usr/sbin/semodule -s ${selinuxvariant} -r passenger &> /dev/null || :
     done
-    /sbin/fixfiles -R %{package_name} restore || :
+    /sbin/fixfiles -R %{name} restore || :
     [ -d %{_libdir}/%{namespace}/support-binaries ] && \
         /sbin/restorecon -R %{_libdir}/%{namespace}/support-binaries &> /dev/null || :
 fi
@@ -366,7 +381,7 @@ fi
     then \
         echo "Fixing up Passenger's SELinux policy for the %1 variant"; \
         /usr/sbin/semodule -s %1 -i %{_datadir}/selinux/%1/passenger.pp || true; \
-        /sbin/fixfiles -R %{package_name} restore || true; \
+        /sbin/fixfiles -R %{name} restore || true; \
         /sbin/restorecon -R %{_libdir}/%{namespace}/support-binaries || true; \
     fi
 
@@ -379,7 +394,7 @@ fi
 %{_sbindir}/*
 %{_libdir}/%{namespace}/support-binaries
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 16
-    %{_prefix}/lib/tmpfiles.d/passenger.conf
+    %{_root_prefix}/lib/tmpfiles.d/%{name}.conf
 %endif
 %{_datadir}/%{namespace}/helper-scripts
 %{_datadir}/%{namespace}/templates
@@ -391,10 +406,11 @@ fi
 %{_datadir}/%{namespace}/*.pem
 %{_datadir}/%{namespace}/*.p12
 %{_datadir}/selinux/*/passenger.pp
-%dir %{_localstatedir}/log/passenger-analytics
-%dir %attr(755, root, root) %{_localstatedir}/run/passenger-instreg
-%{_sysconfdir}/logrotate.d/passenger
-%{_mandir}/*/*
+%dir %{_root_localstatedir}/log/%{name}-analytics
+%dir %attr(755, root, root) %{_root_localstatedir}/run/%{name}-instreg
+%{_root_sysconfdir}/logrotate.d/%{name}
+%{_mandir}/man1/*
+%{_mandir}/man8/*
 %{passenger_ruby_libdir}/*
 %{ruby_vendorarchdir}/passenger_native_support.so
 
@@ -408,12 +424,19 @@ fi
 %{_libdir}/%{namespace}/common
 %{_libdir}/%{namespace}/nginx_dynamic
 
-%files -n %{apache_module_package_name}
+%files -n httpd24-%{apache_module_package_name}
 %config(noreplace) %{_httpd_modconfdir}/*.conf
 %if "%{_httpd_modconfdir}" != "%{_httpd_confdir}"
     %config(noreplace) %{_httpd_confdir}/*.conf
 %endif
 %{_httpd_moddir}/mod_passenger.so
+
+%files -n %{?scl}-runtime
+%{_scl_scripts}/enable
+%{_root_sysconfdir}/scl/prefixes/%{scl}
+
+%files -n %{?scl}-build
+%{_root_sysconfdir}/rpm/macros.%{scl}-config
 
 %changelog
 * Thu Nov 14 2013 Jan Kaluza <jkaluza@redhat.com> - 4.0.18-4

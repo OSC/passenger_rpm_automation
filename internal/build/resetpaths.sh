@@ -1,5 +1,5 @@
 #!/bin/bash
+source /etc/profile.d/rvm.sh
 set -e
-source /usr/local/rvm/scripts/rvm
-rvm use 2.2.2
+rvm use 2.2.10
 exec "$@"

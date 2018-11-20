@@ -34,14 +34,17 @@ run yum install -y --enablerepo centosplus --skip-broken createrepo \
 	apr-devel apr-util-devel which GeoIP-devel \
 	gd-devel gperftools-devel perl-devel perl-ExtUtils-Embed \
 	nodejs010-nodejs nodejs010-npm
+run yum install -y scl-utils-build
 
-run gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+run gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 run curl --fail -sSLo /tmp/rvm.sh https://get.rvm.io
 run bash /tmp/rvm.sh stable
-source /usr/local/rvm/scripts/rvm
-run rvm install ruby-2.2.2
-rvm use ruby-2.2.2
-rvm --default ruby-2.2.2
+set +e
+source /etc/profile.d/rvm.sh
+set -e
+run rvm install ruby-2.2.10
+rvm use ruby-2.2.10
+rvm --default ruby-2.2.10
 run gem install bundler --no-rdoc --no-ri -v 1.9.2
 run env BUNDLE_GEMFILE=/pra_build/Gemfile bundle install -j 4
 
@@ -56,6 +59,7 @@ run sudo -u app -H rpmdev-setuptree
 run mkdir -p /etc/container_environment
 run cp /pra_build/my_init_python /sbin/my_init_python
 run cp /pra_build/site-defaults.cfg /etc/mock/site-defaults.cfg
+run cp /pra_build/epel-6-x86_64.cfg /etc/mock/epel-6-x86_64.cfg
 run cp /pra_build/epel-7-x86_64.cfg /etc/mock/epel-7-x86_64.cfg
 
 header "Cleaning up"
