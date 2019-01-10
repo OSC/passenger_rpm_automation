@@ -90,6 +90,14 @@ Requires(pre):     nginx-filesystem
 Conflicts:         %{passenger_package_name}%{?_isa} < %{passenger_package_version}
 Conflicts:         %{passenger_package_name}%{?_isa} > %{passenger_package_version}
 Provides:          webserver
+# Force upgrade of EPEL packages
+Obsoletes:         nginx-all-modules
+Obsoletes:         nginx-mod-http-geoip
+Obsoletes:         nginx-mod-http-image-filter
+Obsoletes:         nginx-mod-http-perl
+Obsoletes:         nginx-mod-http-xslt-filter-
+Obsoletes:         nginx-mod-mail
+Obsoletes:         nginx-mod-stream
 
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 16
 BuildRequires:     systemd

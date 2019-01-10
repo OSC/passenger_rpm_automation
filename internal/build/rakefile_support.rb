@@ -76,7 +76,7 @@ def set_constants_and_envvars
   if passenger_enterprise?
     set_constant_and_envvar :NGINX_RPM_RELEASE, "2.p#{PASSENGER_VERSION}"
   else
-    set_constant_and_envvar :NGINX_RPM_RELEASE, "1.p#{PASSENGER_VERSION}"
+    set_constant_and_envvar :NGINX_RPM_RELEASE, "2.p#{PASSENGER_VERSION}"
   end
   set_constant_and_envvar :NGINX_RPM_NAME, "nginx"
   set_constant_and_envvar :NGINX_VERSION, PhusionPassenger::PREFERRED_NGINX_VERSION
