@@ -29,8 +29,8 @@
 
 #%{!?ruby_vendorlibdir: %global ruby_vendorlibdir %(scl enable rh-ruby24 -- ruby -rrbconfig -e 'puts RbConfig::CONFIG["vendorlibdir"]')}
 #%{!?ruby_vendorarchdir: %global ruby_vendorarchdir %(scl enable rh-ruby24 -- ruby -rrbconfig -e 'puts RbConfig::CONFIG["vendorarchdir"]')}
-%global ruby_vendorlibdir /opt/rh/rh-ruby24/root/usr/share/ruby/vendor_ruby
-%global ruby_vendorarchdir /opt/rh/rh-ruby24/root/usr/lib64/ruby/vendor_ruby
+%global ruby_vendorlibdir %{_datadir}/ruby/vendor_ruby
+%global ruby_vendorarchdir %{_libdir}/ruby/vendor_ruby
 %global passenger_ruby_libdir %{ruby_vendorlibdir}
 %global locations_ini %{passenger_ruby_libdir}/phusion_passenger/locations.ini
 
