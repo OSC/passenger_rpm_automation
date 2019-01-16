@@ -1,10 +1,7 @@
 # Based on http://pkgs.fedoraproject.org/cgit/nginx.git/tree/
-%global scl_name_prefix ondemand-
-%global scl_name_base nginx
-%global _scl_prefix /opt/ood
-%{!?scl: %global scl %{scl_name_prefix}%{scl_name_base}}
+%{?scl:%global _scl_prefix %_scl_prefix_%{scl}}
 %{?scl:%scl_package nginx}
-%global nfsmountable 1
+%{!?scl_prefix_ondemand: %global scl_prefix_ondemand %{scl}-}
 
 #%global archlib     %{_libdir}/perl5
 #%global root_archlib %{_root_libdir}/perl5
@@ -22,13 +19,13 @@
 %global sourcebasename %{package_name}-%{package_version}
 
 %global  _hardened_build     1
-%global  nginx_user          %{?scl_name_prefix}nginx
+%global  nginx_user          %{?scl_prefix_ondemand}nginx
 %global  nginx_group         %{nginx_user}
-%global  nginx_home          %{_root_localstatedir}/lib/%{?scl_prefix}nginx
+%global  nginx_home          %{_root_localstatedir}/lib/%{?scl_prefix_ondemand}nginx
 %global  nginx_home_tmp      %{nginx_home}/tmp
 %global  nginx_confdir       %{_sysconfdir}/nginx
 %global  nginx_datadir       %{_datadir}/nginx
-%global  nginx_logdir        %{_root_localstatedir}/log/%{?scl_prefix}nginx
+%global  nginx_logdir        %{_root_localstatedir}/log/%{?scl_prefix_ondemand}nginx
 %global  nginx_webroot       %{nginx_datadir}/html
 
 #%{!?ruby_vendorlibdir: %global ruby_vendorlibdir %(ruby -rrbconfig -e 'puts RbConfig::CONFIG["vendorlibdir"]')}
@@ -46,7 +43,7 @@
 %global  with_aio   1
 %endif
 
-Name:              %{?scl_prefix}%{package_name}
+Name:              %{?scl_prefix_ondemand}%{package_name}
 Version:           %{package_version}
 Release:           %{package_release}%{?release_dist}
 
@@ -117,6 +114,8 @@ BuildRequires:  libcurl-devel
 BuildRequires:  curl-devel
 %endif
 
+BuildRequires: %{?scl_prefix_ondemand}build
+BuildRequires: %{?scl_prefix_ondemand}scldevel
 BuildRequires: httpd24-httpd-devel
 BuildRequires: libev-devel >= 4.0.0
 BuildRequires: rh-ruby24-ruby
@@ -142,20 +141,6 @@ Requires(pre):     shadow-utils
 The nginx-filesystem package contains the basic directory layout
 for the Nginx server including the correct permissions for the
 directories.
-
-%package -n %{?scl}-runtime
-Summary: Package that handles %{scl_name} Software Collection.
-Requires: scl-utils
-
-%description -n %{?scl}-runtime
-Package shipping essential scripts to work with %{scl_name} Software Collection.
-
-%package -n %{?scl}-build
-Summary: Package shipping basic build configuration
-Requires: scl-utils-build
-
-%description -n %{?scl}-build
-Package shipping essential configuration macros to build %scl Software Collection.
 
 
 %prep
@@ -306,24 +291,6 @@ done
 #mv %{buildroot}%{root_perl_vendorarch}/nginx.pm %{buildroot}%{perl_vendorarch}/nginx.pm
 #mv %{buildroot}%{root_perl_vendorarch}/auto/nginx/nginx.so %{buildroot}%{perl_vendorarch}/auto/nginx/nginx.so
 
-cat >> %{buildroot}%{_scl_scripts}/enable << EOS
-export PATH="%{_bindir}:%{_sbindir}\${PATH:+:\${PATH}}"
-export LD_LIBRARY_PATH="%{_libdir}\${LD_LIBRARY_PATH:+:\${LD_LIBRARY_PATH}}"
-export MANPATH="%{_mandir}:\${MANPATH:-}"
-export PKG_CONFIG_PATH="%{_libdir}/pkgconfig\${PKG_CONFIG_PATH:+:\${PKG_CONFIG_PATH}}"
-export PERL5LIB="%{perl_vendorarch}\${PERL5LIB:+:\${PERL5LIB}}"
-EOS
-mkdir -p %{buildroot}%{_root_sysconfdir}/{rpm,scl/prefixes}
-cat >> %{buildroot}%{_root_sysconfdir}/rpm/macros.%{scl}-config << EOS 
-%%scl %scl
-%{?nfsmountable:%%nfsmountable %{nfsmountable}}
-%{!?nfsmountable:%%undefine nfsmountable}
-EOS
-cat >> %{buildroot}%{_root_sysconfdir}/scl/prefixes/%{scl} << EOS 
-%_scl_prefix
-EOS
-
-
 EOF
 
 %pre filesystem
@@ -386,13 +353,6 @@ fi
 %dir %{nginx_confdir}
 %dir %{nginx_confdir}/conf.d
 %dir %{nginx_confdir}/default.d
-
-%files -n %{?scl}-runtime
-%{_scl_scripts}/enable
-%{_root_sysconfdir}/scl/prefixes/%{scl}
-
-%files -n %{?scl}-build
-%{_root_sysconfdir}/rpm/macros.%{scl}-config
 
 
 %changelog

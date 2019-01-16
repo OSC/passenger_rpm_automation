@@ -36,7 +36,7 @@ run yum install -y --enablerepo centosplus --skip-broken createrepo \
 	nodejs010-nodejs nodejs010-npm
 run yum install -y scl-utils-build
 
-run gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+run gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 run curl --fail -sSLo /tmp/rvm.sh https://get.rvm.io
 run bash /tmp/rvm.sh stable
 set +e

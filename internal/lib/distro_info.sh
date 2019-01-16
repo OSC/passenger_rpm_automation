@@ -9,7 +9,7 @@
 
 function get_buildbox_image()
 {
-  echo "ohiosupercomputer/ondemand_passenger_rpm_automation_buildbox:1.0.0"
+  echo "ohiosupercomputer/ondemand_passenger_rpm_automation_buildbox:1.1.0"
 }
 
 function el_name_to_distro_name()

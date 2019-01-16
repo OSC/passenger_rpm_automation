@@ -89,7 +89,7 @@ namespace :srpm do
           raise e
         end
 
-        task.sh "rpmbuild -bs --define 'scl #{PASSENGER_SCL}' --root ~/rpmbuild/root-passenger-#{distro_id} #{spec_target_file}"
+        task.sh "rpmbuild -bs --define 'scl #{SCL}' --root ~/rpmbuild/root-passenger-#{distro_id} #{spec_target_file}"
         ARCHITECTURES.each do |arch|
           task.sh "mkdir -p /work/#{distro_id}-#{arch}"
           task.sh "cp #{RPM_SRPMS_DIR}/#{passenger_srpm_name(distro_id)} /work/#{distro_id}-#{arch}/"
@@ -126,7 +126,7 @@ namespace :srpm do
           raise e
         end
 
-        task.sh "rpmbuild -bs --define 'scl #{NGINX_SCL}' --root ~/rpmbuild/root-nginx-#{distro_id} #{spec_target_file}"
+        task.sh "rpmbuild -bs --define 'scl #{SCL}' --root ~/rpmbuild/root-nginx-#{distro_id} #{spec_target_file}"
         ARCHITECTURES.each do |arch|
           task.sh "mkdir -p /work/#{distro_id}-#{arch}"
           task.sh "cp #{RPM_SRPMS_DIR}/#{nginx_srpm_name(distro_id)} /work/#{distro_id}-#{arch}/"
@@ -169,7 +169,7 @@ namespace :rpm do
             "--resultdir '/work/#{distro_id}-#{arch}' " +
             "--uniqueext passenger-#{distro_id}-#{arch} " +
             "--enable-plugin=ccache " +
-            "--define 'scl #{PASSENGER_SCL}' " +
+            "--define 'scl #{SCL}' " +
             "rebuild /work/#{distro_id}-#{arch}/#{passenger_srpm_name(distro_id)}"
         end
       end
@@ -200,7 +200,7 @@ namespace :rpm do
             "--resultdir '/work/#{distro_id}-#{arch}' " +
             "--uniqueext nginx-#{distro_id}-#{arch} " +
             "--enable-plugin=ccache " +
-            "--define 'scl #{NGINX_SCL}' " +
+            "--define 'scl #{SCL}' " +
             "rebuild /work/#{distro_id}-#{arch}/#{nginx_srpm_name(distro_id)}"
         end
       end

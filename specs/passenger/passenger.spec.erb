@@ -1,11 +1,7 @@
 # Based on http://pkgs.fedoraproject.org/cgit/rubygem-passenger.git/tree/
-%global scl_name_prefix ondemand-
-%global scl_name_base passenger
-%global scl_name_version 5
-%global _scl_prefix /opt/ood
-%{!?scl: %global scl %{scl_name_prefix}%{scl_name_base}%{scl_name_version}}
+%{?scl:%global _scl_prefix %_scl_prefix_%{scl}}
 %{?scl:%scl_package passenger}
-%global nfsmountable 1
+%{!?scl_prefix_ondemand: %global scl_prefix_ondemand %{scl}-}
 
 %global package_name <%= PASSENGER_RPM_NAME %>
 %global package_version <%= PASSENGER_VERSION %>
@@ -54,7 +50,7 @@
 
 
 Summary: Phusion Passenger application server
-Name: %{?scl_prefix}%{package_name}
+Name: %{?scl_prefix_ondemand}%{package_name}
 Version: %{package_version}
 Release: %{package_release}%{?release_dist}
 Group: System Environment/Daemons
@@ -101,6 +97,8 @@ BuildRequires: libcurl-devel
 BuildRequires: curl-devel
 %endif
 
+BuildRequires: %{?scl_prefix_ondemand}build
+BuildRequires: %{?scl_prefix_ondemand}scldevel
 BuildRequires: httpd24-build
 BuildRequires: httpd24-httpd-devel
 BuildRequires: rh-ruby24-ruby
@@ -156,26 +154,12 @@ and allows Passenger Standalone to use a different Nginx core version.
 Summary: Phusion Passenger documentation
 Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
-Provides:  %{?scl_prefix}rubygem-passenger-doc = %{version}-%{release}
+Provides:  %{?scl_prefix_ondemand}rubygem-passenger-doc = %{version}-%{release}
 BuildArch: noarch
 License: CC-BY-SA and MIT and (MIT or GPL+)
 
 %description doc
 This package contains documentation files for Phusion Passenger®.
-
-%package -n %{?scl}-runtime
-Summary: Package that handles %{scl_name} Software Collection.
-Requires: scl-utils
-
-%description -n %{?scl}-runtime
-Package shipping essential scripts to work with %{scl_name} Software Collection.
-
-%package -n %{?scl}-build
-Summary: Package shipping basic build configuration
-Requires: scl-utils-build
-
-%description -n %{?scl}-build
-Package shipping essential configuration macros to build %scl Software Collection.
 
 
 %prep
@@ -319,23 +303,6 @@ for selinuxvariant in %{static_selinux_variants}; do
         %{buildroot}%{_datadir}/selinux/${selinuxvariant}/passenger.pp
 done
 
-cat >> %{buildroot}%{_scl_scripts}/enable << EOS
-. scl_source enable rh-ruby24 rh-ror51
-export PATH="%{_bindir}:%{_sbindir}\${PATH:+:\${PATH}}"
-export LD_LIBRARY_PATH="%{_libdir}\${LD_LIBRARY_PATH:+:\${LD_LIBRARY_PATH}}"
-export MANPATH="%{_mandir}:\${MANPATH:-}"
-export PKG_CONFIG_PATH="%{_libdir}/pkgconfig\${PKG_CONFIG_PATH:+:\${PKG_CONFIG_PATH}}"
-EOS
-mkdir -p %{buildroot}%{_root_sysconfdir}/{rpm,scl/prefixes}
-cat >> %{buildroot}%{_root_sysconfdir}/rpm/macros.%{scl}-config << EOS 
-%%scl %scl
-%{?nfsmountable:%%nfsmountable %{nfsmountable}}
-%{!?nfsmountable:%%undefine nfsmountable}
-EOS
-cat >> %{buildroot}%{_root_sysconfdir}/scl/prefixes/%{scl} << EOS 
-%_scl_prefix
-EOS
-
 EOF
 
 
@@ -430,13 +397,6 @@ fi
     %config(noreplace) %{_httpd_confdir}/*.conf
 %endif
 %{_httpd_moddir}/mod_passenger.so
-
-%files -n %{?scl}-runtime
-%{_scl_scripts}/enable
-%{_root_sysconfdir}/scl/prefixes/%{scl}
-
-%files -n %{?scl}-build
-%{_root_sysconfdir}/rpm/macros.%{scl}-config
 
 %changelog
 * Thu Nov 14 2013 Jan Kaluza <jkaluza@redhat.com> - 4.0.18-4
