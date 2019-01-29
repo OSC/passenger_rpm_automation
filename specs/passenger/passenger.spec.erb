@@ -77,11 +77,9 @@ Source102: passenger.tmpfiles
 # https://bugzilla.redhat.com/show_bug.cgi?id=985634
 Patch107:       rubygem-passenger-4.0.18-GLIBC_HAVE_LONG_LONG.patch
 
-Requires: rh-ruby24-rubygems
+Requires: ondemand-ruby
 # XXX: Needed to run passenger standalone
 Requires: rh-ror50-rubygem(rack)
-Requires: rh-ruby24-rubygem(rake)
-Requires: rh-ruby24-ruby(release)
 %{?scl:Requires:%scl_runtime}
 
 %{!?_selinux_policy_version: %global _selinux_policy_version %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2>/dev/null)}
@@ -97,15 +95,12 @@ BuildRequires: libcurl-devel
 BuildRequires: curl-devel
 %endif
 
+%{?scl:BuildRequires:%scl_runtime}
 BuildRequires: %{?scl_prefix_ondemand}build
 BuildRequires: %{?scl_prefix_ondemand}scldevel
-BuildRequires: httpd24-build
-BuildRequires: httpd24-httpd-devel
-BuildRequires: rh-ruby24-ruby
-BuildRequires: rh-ruby24-ruby-devel
-BuildRequires: rh-ruby24-rubygems
-BuildRequires: rh-ruby24-rubygems-devel
-BuildRequires: rh-ruby24-rubygem(rake) >= 0.8.1
+BuildRequires: %{?scl_ondemand_prefix_apache}build
+BuildRequires: ondemand-apache
+BuildRequires: ondemand-ruby
 BuildRequires: rh-ror50-rubygem(rack)
 BuildRequires: zlib-devel
 BuildRequires: pcre-devel
@@ -127,15 +122,15 @@ adds powerful enterprise-grade features that are useful in production,
 and makes administration much easier and less complex. It supports Ruby,
 Python, Node.js and Meteor.
 
-%package -n httpd24-%{apache_module_package_name}
+%package -n %{?scl_ondemand_prefix_apache}%{apache_module_package_name}
 Summary: Apache Module for Phusion Passenger
 Group: System Environment/Daemons
-BuildRequires:  httpd24-httpd-devel
-Requires: httpd24-httpd-mmn = %{_httpd_mmn}
+BuildRequires:  ondemand-apache
+Requires: %{?scl_ondemand_prefix_apache}httpd-mmn = %{_httpd_mmn}
 Requires: %{name}%{?_isa} = %{version}-%{release}
 License: Boost and BSD and BSD with advertising and MIT and zlib
 
-%description -n httpd24-%{apache_module_package_name}
+%description -n %{?scl_ondemand_prefix_apache}%{apache_module_package_name}
 This package contains the pluggable Apache server module for Phusion Passenger®.
 
 %package devel
@@ -173,7 +168,7 @@ tar xzf %{SOURCE1}
 %endif
 
 %build
-scl enable httpd24 rh-ruby24 rh-ror50 - << \EOF
+scl enable ondemand rh-ror50 - << \EOF
 cd %{sourcebasename}
 export EXTRA_CFLAGS="${CFLAGS:-%optflags} -Wno-deprecated"
 export EXTRA_CXXFLAGS="${CXXFLAGS:-%optflags} -Wno-deprecated"
@@ -229,7 +224,7 @@ done
 EOF
 
 %install
-scl enable httpd24 rh-ruby24 rh-ror50 - << \EOF
+scl enable ondemand rh-ror50 - << \EOF
 set -x
 cd %{sourcebasename}
 export LANG=en_US.UTF-8
@@ -391,7 +386,7 @@ fi
 %{_libdir}/%{namespace}/common
 %{_libdir}/%{namespace}/nginx_dynamic
 
-%files -n httpd24-%{apache_module_package_name}
+%files -n %{?scl_ondemand_prefix_apache}%{apache_module_package_name}
 %config(noreplace) %{_httpd_modconfdir}/*.conf
 %if "%{_httpd_modconfdir}" != "%{_httpd_confdir}"
     %config(noreplace) %{_httpd_confdir}/*.conf

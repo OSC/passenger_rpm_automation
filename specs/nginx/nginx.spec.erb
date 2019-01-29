@@ -114,15 +114,12 @@ BuildRequires:  libcurl-devel
 BuildRequires:  curl-devel
 %endif
 
+%{?scl:BuildRequires:%scl_runtime}
 BuildRequires: %{?scl_prefix_ondemand}build
 BuildRequires: %{?scl_prefix_ondemand}scldevel
-BuildRequires: httpd24-httpd-devel
+BuildRequires: ondemand-apache
 BuildRequires: libev-devel >= 4.0.0
-BuildRequires: rh-ruby24-ruby
-BuildRequires: rh-ruby24-ruby-devel
-BuildRequires: rh-ruby24-rubygems
-BuildRequires: rh-ruby24-rubygems-devel
-BuildRequires: rh-ruby24-rubygem(rake) >= 0.8.1
+BuildRequires: ondemand-ruby
 BuildRequires: rh-ror50-rubygem(rack)
 %{?scl:Requires:%scl_runtime}
 
@@ -151,7 +148,7 @@ tar xzf %{SOURCE2}
 
 
 %build
-scl enable httpd24 rh-ruby24 rh-ror50 - << \EOF
+scl enable ondemand rh-ror50 - << \EOF
 cd %{sourcebasename}
 export EXTRA_CFLAGS="${CFLAGS:-%optflags} -Wno-deprecated"
 export EXTRA_CXXFLAGS="${CXXFLAGS:-%optflags} -Wno-deprecated"
@@ -237,7 +234,7 @@ make %{?_smp_mflags}
 EOF
 
 %install
-scl enable httpd24 rh-ruby24 rh-ror50 - << \EOF
+scl enable ondemand rh-ror50 - << \EOF
 cd %{sourcebasename}
 make install DESTDIR=%{buildroot} INSTALLDIRS=vendor
 
