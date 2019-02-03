@@ -189,11 +189,11 @@ export DESTDIR=%{buildroot}
     --http-uwsgi-temp-path=%{nginx_home_tmp}/uwsgi \
     --http-scgi-temp-path=%{nginx_home_tmp}/scgi \
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 16
-    --pid-path=/run/nginx.pid \
-    --lock-path=/run/lock/subsys/nginx \
+    --pid-path=/run/%{?scl_prefix_ondemand}nginx.pid \
+    --lock-path=/run/lock/subsys/%{?scl_prefix_ondemand}nginx \
 %else
-    --pid-path=%{_localstatedir}/run/nginx.pid \
-    --lock-path=%{_localstatedir}/lock/subsys/nginx \
+    --pid-path=%{_root_localstatedir}/run/%{?scl_prefix_ondemand}nginx.pid \
+    --lock-path=%{_root_localstatedir}/lock/subsys/%{?scl_prefix_ondemand}nginx \
 %endif
     --user=%{nginx_user} \
     --group=%{nginx_group} \
@@ -273,11 +273,18 @@ install -p -D -m 0644 man/nginx.8 %{buildroot}%{_mandir}/man8/nginx.8
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 16
 install -p -D -m 0755 %{SOURCE13} %{buildroot}%{_bindir}/nginx-upgrade
 install -p -D -m 0644 %{SOURCE14} %{buildroot}%{_mandir}/man8/nginx-upgrade.8
-
 sed -i 's|/var/run|/run|g' \
-    %{buildroot}%{nginx_confdir}/nginx.conf \
-    %{buildroot}%{_root_sysconfdir}/logrotate.d/%{name}
+    %{buildroot}%{nginx_confdir}/nginx.conf
 %endif
+
+sed -i 's|nginx|%{?scl_prefix_ondemand}nginx|g' \
+    %{buildroot}%{_root_sysconfdir}/logrotate.d/%{name}
+
+sed -i -e 's|%{_root_localstatedir}/log/nginx|%{nginx_logdir}|g' \
+    -e 's|%{_root_sysconfdir}/nginx|%{nginx_confdir}|g' \
+    -e 's|%{_root_datadir}/nginx|%{nginx_datadir}|g' \
+    -e 's|nginx.pid|%{?scl_prefix_ondemand}nginx.pid|g' \
+    %{buildroot}%{nginx_confdir}/nginx.conf
 
 for i in ftdetect indent syntax; do
     install -p -D -m644 contrib/vim/${i}/nginx.vim \
