@@ -46,8 +46,6 @@
 #
 # REMINDER: if you change this list, don't forget to update the 'triggerin'
 # sections.
-%global static_selinux_variants targeted
-
 
 Summary: Phusion Passenger application server
 Name: %{?scl_prefix_ondemand}%{package_name}
@@ -82,13 +80,6 @@ Requires: ondemand-ruby
 Requires: rh-ror50-rubygem(rack)
 %{?scl:Requires:%scl_runtime}
 
-%{!?_selinux_policy_version: %global _selinux_policy_version %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2>/dev/null)}
-%if "%{_selinux_policy_version}" != ""
-Requires: selinux-policy >= %{_selinux_policy_version}
-%endif
-Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
-Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
-
 %if 0%{?rhel} >= 6 || 0%{?fedora} >= 15
 BuildRequires: libcurl-devel
 %else
@@ -105,12 +96,6 @@ BuildRequires: rh-ror50-rubygem(rack)
 BuildRequires: zlib-devel
 BuildRequires: pcre-devel
 BuildRequires: openssl-devel
-BuildRequires: selinux-policy-targeted
-%if 0%{?rhel} >= 7
-BuildRequires: selinux-policy-sandbox
-%endif
-BuildRequires: checkpolicy, selinux-policy-devel, /usr/share/selinux/devel/policyhelp
-BuildRequires: libselinux-devel
 
 Provides: %{name} = %{version}-%{release}
 Provides: bundled(boost)  = %{bundled_boost_version}
@@ -177,7 +162,6 @@ export EXTRA_CXXFLAGS="${CXXFLAGS:-%optflags} -Wno-deprecated"
 export EXTRA_CFLAGS=`echo "$EXTRA_CFLAGS" | sed 's|-O2||g'`
 export EXTRA_CXXFLAGS=`echo "$EXTRA_CXXFLAGS" | sed 's|-O2||g'`
 export OPTIMIZE=yes
-export USE_SELINUX=yes
 
 export CACHING=false
 
@@ -209,19 +193,6 @@ pushd nginx-%{nginx_version}
 ./configure --prefix=/tmp $nginx_config_opts --add-module=`pwd`/../src/nginx_module
 make
 popd
-
-# Build SELinux policy modules.
-%{__cp} %{SOURCE3} %{SOURCE4} .
-%{__cp} %{SOURCE2} passenger.fc.tmp
-%{__sed} -i "s|SUPPORT_BINARIES_DIR_MAIN|%{_libdir}/%{namespace}/support-binaries|g" passenger.fc.tmp
-%{__sed} -i "s|SUPPORT_BINARIES_DIR_ALT|%{_prefix}/lib/%{namespace}/support-binaries|g" passenger.fc.tmp
-uniq passenger.fc.tmp > passenger.fc
-for selinuxvariant in %{static_selinux_variants}; do
-    %{__make} -f %{_root_datadir}/selinux/devel/Makefile NAME=passenger
-    %{__mv} passenger.pp passenger.pp.${selinuxvariant}
-    %{__make} -f %{_root_datadir}/selinux/devel/Makefile NAME=passenger clean
-done
-EOF
 
 %install
 scl enable ondemand rh-ror50 - << \EOF
@@ -291,65 +262,7 @@ export LC_ALL=en_US.UTF-8
 # Fix Python scripts with shebang which are not executable
 %{__chmod} +x %{buildroot}%{_datadir}/%{namespace}/helper-scripts/wsgi-loader.py
 
-# Install SELinux policy module.
-for selinuxvariant in %{static_selinux_variants}; do
-    %{__install} -d %{buildroot}%{_datadir}/selinux/${selinuxvariant}
-    %{__install} -p -m 644 passenger.pp.${selinuxvariant} \
-        %{buildroot}%{_datadir}/selinux/${selinuxvariant}/passenger.pp
-done
-
 EOF
-
-
-%define listActualSelinuxVariants() \
-    actual_selinux_variants=; \
-    for selinux_policy_file in /etc/selinux/*/policy; do \
-        selinux_policy_dir=$(dirname ${selinux_policy_file}); \
-        actual_selinux_variants="$actual_selinux_variants $(basename ${selinux_policy_dir})"; \
-    done; \
-    actual_selinux_variants=$(echo ${actual_selinux_variants}); \
-    if [ -z "${actual_selinux_variants}" ]; then \
-        actual_selinux_variants=%{static_selinux_variants}; \
-    fi
-
-%post
-if /usr/sbin/sestatus | grep 'SELinux status' | grep -q enabled; then
-    %listActualSelinuxVariants
-    for selinuxvariant in ${actual_selinux_variants}; do
-        if [ -e %{_datadir}/selinux/${selinuxvariant}/passenger.pp ]; then
-            echo "Installing Passenger SELinux policy for the $selinuxvariant variant"
-            /usr/sbin/semodule -s ${selinuxvariant} -i \
-                %{_datadir}/selinux/${selinuxvariant}/passenger.pp || :
-        fi
-    done
-    /sbin/fixfiles -R %{name} restore || :
-    /sbin/restorecon -R %{_libdir}/%{namespace}/support-binaries || :
-fi
-
-%postun
-if [ $1 -eq 0 ] ; then
-    %listActualSelinuxVariants
-    for selinuxvariant in ${actual_selinux_variants}; do
-        /usr/sbin/semodule -s ${selinuxvariant} -r passenger &> /dev/null || :
-    done
-    /sbin/fixfiles -R %{name} restore || :
-    [ -d %{_libdir}/%{namespace}/support-binaries ] && \
-        /sbin/restorecon -R %{_libdir}/%{namespace}/support-binaries &> /dev/null || :
-fi
-
-%define fixupSelinuxPolicy() \
-    if /usr/sbin/sestatus | grep 'SELinux status' | grep -q enabled && \
-        [ -e %{_datadir}/selinux/%1/passenger.pp ]; \
-    then \
-        echo "Fixing up Passenger's SELinux policy for the %1 variant"; \
-        /usr/sbin/semodule -s %1 -i %{_datadir}/selinux/%1/passenger.pp || true; \
-        /sbin/fixfiles -R %{name} restore || true; \
-        /sbin/restorecon -R %{_libdir}/%{namespace}/support-binaries || true; \
-    fi
-
-%triggerin -- selinux-policy-targeted
-%fixupSelinuxPolicy targeted
-
 
 %files
 %{_bindir}/*
@@ -367,7 +280,6 @@ fi
 %{_datadir}/%{namespace}/*.txt
 %{_datadir}/%{namespace}/*.pem
 %{_datadir}/%{namespace}/*.p12
-%{_datadir}/selinux/*/passenger.pp
 %dir %{_root_localstatedir}/log/%{name}-analytics
 %dir %attr(755, root, root) %{_root_localstatedir}/run/%{name}-instreg
 %{_root_sysconfdir}/logrotate.d/%{name}

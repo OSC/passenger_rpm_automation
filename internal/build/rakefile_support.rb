@@ -66,7 +66,7 @@ def set_constants_and_envvars
     set_constant_and_envvar :PASSENGER_APACHE_MODULE_RPM_NAME, "mod_passenger_enterprise"
   else
     set_constant_and_envvar :PASSENGER_RPM_NAME, "passenger"
-    set_constant_and_envvar :PASSENGER_RPM_RELEASE, 1
+    set_constant_and_envvar :PASSENGER_RPM_RELEASE, 2
     set_constant_and_envvar :PASSENGER_TARBALL_NAME, "passenger"
     set_constant_and_envvar :PASSENGER_APACHE_MODULE_RPM_NAME, "mod_passenger"
   end
@@ -77,7 +77,7 @@ def set_constants_and_envvars
   if passenger_enterprise?
     set_constant_and_envvar :NGINX_RPM_RELEASE, "2.p#{PASSENGER_VERSION}"
   else
-    set_constant_and_envvar :NGINX_RPM_RELEASE, "1.p#{PASSENGER_VERSION}"
+    set_constant_and_envvar :NGINX_RPM_RELEASE, "2.p#{PASSENGER_VERSION}"
   end
   set_constant_and_envvar :NGINX_RPM_NAME, "nginx"
   set_constant_and_envvar :NGINX_VERSION, PhusionPassenger::PREFERRED_NGINX_VERSION
