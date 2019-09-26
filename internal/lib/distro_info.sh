@@ -9,13 +9,15 @@
 
 function get_buildbox_image()
 {
-  echo "ohiosupercomputer/ondemand_passenger_rpm_automation_buildbox:1.2.0"
+  echo "ohiosupercomputer/ondemand_passenger_rpm_automation_buildbox:1.3.0"
 }
 
 function el_name_to_distro_name()
 {
 	local EL="$1"
-	if [[ "$EL" = el7 ]]; then
+	if [[ "$EL" = el8 ]]; then
+		echo centos8
+    elif [[ "$EL" = el7 ]]; then
 		echo centos7
 	elif [[ "$EL" = el6 ]]; then
 		echo centos6

@@ -22,9 +22,8 @@ run groupadd --gid 2467 app
 run adduser --uid 2467 --gid 2467 --password '#' app
 
 header "Installing dependencies"
-run rpm -Uvh http://mirror.overthewire.com.au/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
 run yum update -y
-run yum install -y --enablerepo centosplus --skip-broken centos-release-SCL
+run yum install -y --enablerepo centosplus --skip-broken centos-release-scl epel-release
 run yum install -y --enablerepo centosplus --skip-broken createrepo \
 	@development-tools fedora-packager git sudo gcc gcc-c++ ccache \
 	curl-devel openssl-devel python27-python \
@@ -34,6 +33,8 @@ run yum install -y --enablerepo centosplus --skip-broken createrepo \
 	apr-devel apr-util-devel which GeoIP-devel \
 	gd-devel gperftools-devel perl-devel perl-ExtUtils-Embed \
 	nodejs010-nodejs nodejs010-npm
+# Temporary to get access to CentOS8 and EPEL8 configs
+run yum update -y --enablerepo epel-testing mock-core-configs
 run yum install -y scl-utils-build
 
 #run gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
@@ -63,6 +64,7 @@ run cp /pra_build/my_init_python /sbin/my_init_python
 run cp /pra_build/site-defaults.cfg /etc/mock/site-defaults.cfg
 run cp /pra_build/epel-6-x86_64.cfg /etc/mock/epel-6-x86_64.cfg
 run cp /pra_build/epel-7-x86_64.cfg /etc/mock/epel-7-x86_64.cfg
+run cp /pra_build/epel-8-x86_64.cfg /etc/mock/epel-8-x86_64.cfg
 
 header "Cleaning up"
 run yum clean all
