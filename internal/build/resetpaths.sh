@@ -1,5 +1,4 @@
 #!/bin/bash
-source /etc/profile.d/rvm.sh
 set -e
-rvm use 2.2.10
+source scl_source enable rh-ruby25
 exec "$@"

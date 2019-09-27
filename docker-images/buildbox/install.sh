@@ -24,32 +24,15 @@ run adduser --uid 2467 --gid 2467 --password '#' app
 header "Installing dependencies"
 run yum update -y
 run yum install -y --enablerepo centosplus --skip-broken centos-release-scl epel-release
-run yum install -y --enablerepo centosplus --skip-broken createrepo \
-	@development-tools fedora-packager git sudo gcc gcc-c++ ccache \
-	curl-devel openssl-devel python27-python \
-	httpd httpd-devel zlib-devel \
-	libxml2-devel libxslt-devel sqlite-devel \
-	libev-devel pcre-devel rubygem-rack source-highlight \
-	apr-devel apr-util-devel which GeoIP-devel \
-	gd-devel gperftools-devel perl-devel perl-ExtUtils-Embed \
-	nodejs010-nodejs nodejs010-npm
+run yum install -y --enablerepo centosplus --skip-broken @buildsys-build \
+    curl-devel openssl-devel sqlite-devel zlib-devel libxml2-devel libxslt-devel \
+	mock git sudo which rpmdevtools
 # Temporary to get access to CentOS8 and EPEL8 configs
 run yum update -y --enablerepo epel-testing mock-core-configs
 run yum install -y scl-utils-build
+run yum install -y rh-ruby25-rubygem-bundler rh-ruby25-ruby-devel
 
-#run gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-run curl -sSL https://rvm.io/mpapis.asc | gpg --import -
-run curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
-run curl --fail -sSLo /tmp/rvm.sh https://get.rvm.io
-run bash /tmp/rvm.sh stable
-set +e
-source /etc/profile.d/rvm.sh
-set -e
-run rvm install ruby-2.2.10
-rvm use ruby-2.2.10
-rvm --default ruby-2.2.10
-run gem install bundler --no-rdoc --no-ri -v 1.9.2
-run env BUNDLE_GEMFILE=/pra_build/Gemfile bundle install -j 4
+run scl enable rh-ruby25 'BUNDLE_GEMFILE=/pra_build/Gemfile bundle install -j 4'
 
 header "Miscellaneous"
 run sed -i 's/Defaults    requiretty//' /etc/sudoers
@@ -60,7 +43,6 @@ run usermod -a -G mock app
 run sudo -u app -H rpmdev-setuptree
 
 run mkdir -p /etc/container_environment
-run cp /pra_build/my_init_python /sbin/my_init_python
 run cp /pra_build/site-defaults.cfg /etc/mock/site-defaults.cfg
 run cp /pra_build/epel-6-x86_64.cfg /etc/mock/epel-6-x86_64.cfg
 run cp /pra_build/epel-7-x86_64.cfg /etc/mock/epel-7-x86_64.cfg
