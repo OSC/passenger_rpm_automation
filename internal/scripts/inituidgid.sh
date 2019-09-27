@@ -9,7 +9,6 @@ set -o pipefail
 # ssh_keys in the CentOS 7 container with these UID/GID, but we don't need them so
 # we just delete them.
 if grep -q 7 /etc/redhat-release; then
-	userdel saslauth
 	groupdel ssh_keys
 fi
 
