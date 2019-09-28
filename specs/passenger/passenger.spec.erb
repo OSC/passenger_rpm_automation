@@ -27,8 +27,6 @@
 %{!?_httpd_modconfdir:  %{expand: %%global _httpd_modconfdir  %%{_sysconfdir}/httpd/conf.d}}
 %{!?_httpd_moddir:      %{expand: %%global _httpd_moddir      %%{_libdir}/httpd/modules}}
 
-#%{!?ruby_vendorlibdir: %global ruby_vendorlibdir %(scl enable rh-ruby24 -- ruby -rrbconfig -e 'puts RbConfig::CONFIG["vendorlibdir"]')}
-#%{!?ruby_vendorarchdir: %global ruby_vendorarchdir %(scl enable rh-ruby24 -- ruby -rrbconfig -e 'puts RbConfig::CONFIG["vendorarchdir"]')}
 %global ruby_vendorlibdir %{_datadir}/ruby/vendor_ruby
 %global ruby_vendorarchdir %{_libdir}/ruby/vendor_ruby
 %global passenger_ruby_libdir %{ruby_vendorlibdir}
@@ -76,8 +74,6 @@ Source102: passenger.tmpfiles
 Patch107:       rubygem-passenger-4.0.18-GLIBC_HAVE_LONG_LONG.patch
 
 Requires: ondemand-ruby
-# XXX: Needed to run passenger standalone
-Requires: rh-ror50-rubygem(rack)
 %{?scl:Requires:%scl_runtime}
 
 %if 0%{?rhel} >= 6 || 0%{?fedora} >= 15
@@ -89,10 +85,9 @@ BuildRequires: curl-devel
 %{?scl:BuildRequires:%scl_runtime}
 BuildRequires: %{?scl_prefix_ondemand}build
 BuildRequires: %{?scl_prefix_ondemand}scldevel
-BuildRequires: %{?scl_ondemand_prefix_apache}build
+%{?scl_ondemand_prefix_apache:BuildRequires: %{?scl_ondemand_prefix_apache}build}
 BuildRequires: ondemand-apache
 BuildRequires: ondemand-ruby
-BuildRequires: rh-ror50-rubygem(rack)
 BuildRequires: zlib-devel
 BuildRequires: pcre-devel
 BuildRequires: openssl-devel
@@ -153,7 +148,7 @@ tar xzf %{SOURCE1}
 %endif
 
 %build
-scl enable ondemand rh-ror50 - << \EOF
+scl enable ondemand - << \EOF
 cd %{sourcebasename}
 export EXTRA_CFLAGS="${CFLAGS:-%optflags} -Wno-deprecated"
 export EXTRA_CXXFLAGS="${CXXFLAGS:-%optflags} -Wno-deprecated"
@@ -195,7 +190,7 @@ make
 popd
 
 %install
-scl enable ondemand rh-ror50 - << \EOF
+scl enable ondemand - << \EOF
 set -x
 cd %{sourcebasename}
 export LANG=en_US.UTF-8

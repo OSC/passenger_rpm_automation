@@ -120,7 +120,6 @@ BuildRequires: %{?scl_prefix_ondemand}scldevel
 BuildRequires: ondemand-apache
 BuildRequires: libev-devel >= 4.0.0
 BuildRequires: ondemand-ruby
-BuildRequires: rh-ror50-rubygem(rack)
 %{?scl:Requires:%scl_runtime}
 
 %description
@@ -148,7 +147,7 @@ tar xzf %{SOURCE2}
 
 
 %build
-scl enable ondemand rh-ror50 - << \EOF
+scl enable ondemand - << \EOF
 cd %{sourcebasename}
 export EXTRA_CFLAGS="${CFLAGS:-%optflags} -Wno-deprecated"
 export EXTRA_CXXFLAGS="${CXXFLAGS:-%optflags} -Wno-deprecated"
